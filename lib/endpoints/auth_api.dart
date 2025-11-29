@@ -43,7 +43,7 @@ class AuthAPI {
       final data = jsonDecode(response.body);
       await storage.write(key: "access", value: data["access"]);
       await storage.write(key: "refresh", value: data["refresh"]);
-      await storage.write(key: "role", value: data["role"]);
+      await storage.write(key: "role", value: data["user"]["role"]);
       return true;
     }
 
@@ -51,11 +51,14 @@ class AuthAPI {
   }
 
   static Future<String?> getRole() async {
-  return await storage.read(key: "role");
+    return await storage.read(key: "role");
   }
 
   static Future<void> logout() async {
-  await storage.deleteAll();
+    await storage.deleteAll();
   }
 
+  static Future<String?> getAccessToken() async {
+    return await storage.read(key: "access");
+  }
 }

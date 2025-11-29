@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'generate_qr_screen.dart';
+import 'teacher_generate_qr_screen.dart';
 
 class TeacherHomeScreen extends StatelessWidget {
   const TeacherHomeScreen({super.key});
@@ -9,18 +9,16 @@ class TeacherHomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Teacher Home")),
       body: Center(
-        child: ElevatedButton(
+        child: // example button in TeacherHomeScreen
+            ElevatedButton(
           onPressed: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => const GenerateQRScreen(
-                  qrToken: "test-session-token-123",
-                ),
-              ),
+                  builder: (_) => const TeacherGenerateQRScreen()),
             );
           },
-          child: const Text("Generate Dummy QR"),
+          child: const Text("Generate Session QR"),
         ),
       ),
     );

@@ -1,7 +1,7 @@
 class Endpoints {
   // ---------- BASE URL ----------
   // Change this ONE place only
-  static const String baseURL = "http://192.168.1.144:8000/api/";
+  static const String baseURL = "http://192.168.137.1:8000/api/";
 
   // ---------- AUTH ----------
   static const String register = "${baseURL}users/register/";
