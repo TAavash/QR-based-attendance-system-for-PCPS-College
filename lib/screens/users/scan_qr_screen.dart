@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner_plus/qr_code_scanner_plus.dart';
+import '../../endpoints/session_api.dart';
 
 class ScanQRScreen extends StatefulWidget {
   const ScanQRScreen({super.key});
@@ -11,7 +12,7 @@ class ScanQRScreen extends StatefulWidget {
 class _ScanQRScreenState extends State<ScanQRScreen> {
   final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
   QRViewController? controller;
-  String? scannedData;
+  bool scanned = false;
 
   @override
   void reassemble() {
@@ -29,15 +30,32 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
   void _onQRViewCreated(QRViewController ctrl) {
     controller = ctrl;
 
-    ctrl.scannedDataStream.listen((scanData) {
-      if (scannedData == null) {
-        scannedData = scanData.code;
+    ctrl.scannedDataStream.listen((scanData) async {
+      final code = scanData.code;
+      if (scanned) return;
+      scanned = true;
 
-        // Stop scanning
-        controller?.pauseCamera();
+      // Pause camera while we mark
+      await controller?.pauseCamera();
 
-        // Return scanned text to previous screen
-        Navigator.pop(context, scannedData);
+      if (code == null || code.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Empty QR code")));
+        await controller?.resumeCamera();
+        scanned = false;
+        return;
+      }
+
+      try {
+        final result = await SessionAPI.markAttendance(code);
+        // result may contain "message" or "error"
+        final msg = result["message"] ?? result["error"] ?? result.toString();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to mark attendance: $e")));
+      } finally {
+        // small delay so user sees the message
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) Navigator.pop(context);
       }
     });
   }
@@ -49,7 +67,6 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
         title: const Text("Scan QR Code"),
         centerTitle: true,
       ),
-
       body: Column(
         children: [
           Expanded(
@@ -73,11 +90,9 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
               width: double.infinity,
               color: Colors.black12,
               alignment: Alignment.center,
-              child: Text(
-                scannedData == null
-                    ? "Point camera at QR code"
-                    : "Scanned: $scannedData",
-                style: const TextStyle(fontSize: 18),
+              child: const Text(
+                "Point camera at QR code",
+                style: TextStyle(fontSize: 18),
               ),
             ),
           )

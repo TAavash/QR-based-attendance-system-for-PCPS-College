@@ -6,15 +6,20 @@ import 'endpoints.dart';
 class AuthAPI {
   static const storage = FlutterSecureStorage();
 
+  // helper headers (no token)
+  static Map<String, String> _plainHeaders() {
+    return {"Content-Type": "application/json"};
+  }
+
   static Future<bool> register({
     required String username,
     required String email,
     required String password,
     required String role,
   }) async {
-    final response = await http.post(
+    final res = await http.post(
       Uri.parse(Endpoints.register),
-      headers: {"Content-Type": "application/json"},
+      headers: _plainHeaders(),
       body: jsonEncode({
         "username": username,
         "email": email,
@@ -23,31 +28,51 @@ class AuthAPI {
       }),
     );
 
-    return response.statusCode == 201;
+    return res.statusCode == 201;
   }
 
+  /// Login and persist tokens + role
   static Future<bool> login({
     required String username,
     required String password,
   }) async {
-    final response = await http.post(
+    final res = await http.post(
       Uri.parse(Endpoints.login),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "username": username,
-        "password": password,
-      }),
+      headers: _plainHeaders(),
+      body: jsonEncode({"username": username, "password": password}),
     );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      await storage.write(key: "access", value: data["access"]);
-      await storage.write(key: "refresh", value: data["refresh"]);
-      await storage.write(key: "role", value: data["user"]["role"]);
+    if (res.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(res.body);
+
+      // Save access/refresh tokens if present
+      if (data.containsKey("access")) {
+        await storage.write(key: "access", value: data["access"]);
+      }
+      if (data.containsKey("refresh")) {
+        await storage.write(key: "refresh", value: data["refresh"]);
+      }
+
+      // Role: support both shapes: {"role": "..."} OR {"user": {"role": "..."}}
+      String? role;
+      if (data.containsKey("role") && data["role"] is String) {
+        role = data["role"] as String;
+      } else if (data.containsKey("user") && data["user"] is Map && data["user"]["role"] is String) {
+        role = data["user"]["role"] as String;
+      }
+
+      if (role != null) {
+        await storage.write(key: "role", value: role);
+      }
+
       return true;
     }
 
     return false;
+  }
+
+  static Future<String?> getAccessToken() async {
+    return await storage.read(key: "access");
   }
 
   static Future<String?> getRole() async {
@@ -56,9 +81,5 @@ class AuthAPI {
 
   static Future<void> logout() async {
     await storage.deleteAll();
-  }
-
-  static Future<String?> getAccessToken() async {
-    return await storage.read(key: "access");
   }
 }

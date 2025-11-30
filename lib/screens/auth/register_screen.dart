@@ -29,9 +29,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => loading = true);
 
     bool ok = await AuthAPI.register(
-      username: username.text,
-      email: email.text,
-      password: password.text,
+      username: username.text.trim(),
+      email: email.text.trim(),
+      password: password.text.trim(),
       role: role,
     );
 
@@ -61,31 +61,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            TextField(
-              controller: username,
-              decoration: const InputDecoration(labelText: "Username"),
-            ),
+            TextField(controller: username, decoration: const InputDecoration(labelText: "Username")),
+            const SizedBox(height: 8),
+            TextField(controller: email, decoration: const InputDecoration(labelText: "Email")),
+            const SizedBox(height: 8),
+            TextField(controller: password, obscureText: true, decoration: const InputDecoration(labelText: "Password")),
+            const SizedBox(height: 12),
 
-            TextField(
-              controller: email,
-              decoration: const InputDecoration(labelText: "Email"),
-            ),
-
-            TextField(
-              controller: password,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: "Password"),
-            ),
-
-            const SizedBox(height: 15),
-
-            DropdownButton(
-              value: role,
-              items: const [
-                DropdownMenuItem(value: "student", child: Text("Student")),
-                DropdownMenuItem(value: "teacher", child: Text("Teacher")),
+            Row(
+              children: [
+                const Text("Register as: "),
+                const SizedBox(width: 12),
+                DropdownButton<String>(
+                  value: role,
+                  items: const [
+                    DropdownMenuItem(value: "student", child: Text("Student")),
+                    DropdownMenuItem(value: "teacher", child: Text("Teacher")),
+                  ],
+                  onChanged: (value) => setState(() => role = value ?? "student"),
+                ),
               ],
-              onChanged: (value) => setState(() => role = value.toString()),
             ),
 
             const SizedBox(height: 20),
@@ -94,7 +89,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: handleRegister,
-                    child: const Text("Register"),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                      child: Text("Register"),
+                    ),
                   ),
 
             const SizedBox(height: 15),

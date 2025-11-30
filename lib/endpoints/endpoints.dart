@@ -1,21 +1,19 @@
 class Endpoints {
-  // ---------- BASE URL ----------
-  // Change this ONE place only
-  static const String baseURL = "http://192.168.137.1:8000/api/";
+  static const String baseURL = "http://192.168.1.144:8000/api/";
 
-  // ---------- AUTH ----------
+  // AUTH
   static const String register = "${baseURL}users/register/";
   static const String login = "${baseURL}users/login/";
 
-  // ---------- TEACHER ----------
+  // CLASS & TEACHER
+  static const String teacherClasses = "${baseURL}attendance/teacher/classes/";
+  static const String createClass = "${baseURL}attendance/create-class/";
+
+  // SESSION
   static const String createSession = "${baseURL}attendance/create-session/";
+  static const String teacherSessions = "${baseURL}attendance/teacher/sessions/";
 
-  // ---------- STUDENT ----------
-  static const String markAttendance = "${baseURL}attendance/mark/";
-
-  // ---------- CLASSES ----------
-  static const String classes = "${baseURL}classes/";
-
-  // ---------- SESSIONS ----------
-  static const String sessions = "${baseURL}sessions/";
+  // STUDENT
+  static const String markAttendance = "${baseURL}attendance/mark-attendance/";
+  static const String studentHistory = "${baseURL}attendance/student/history/";
 }

@@ -27,8 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => loading = true);
 
     bool success = await AuthAPI.login(
-      username: username.text,
-      password: password.text,
+      username: username.text.trim(),
+      password: password.text.trim(),
     );
 
     setState(() => loading = false);
@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    // Fetch role
+    // Fetch role (saved during login)
     String? role = await AuthAPI.getRole();
 
     ScaffoldMessenger.of(context)
@@ -73,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: username,
               decoration: const InputDecoration(labelText: "Username"),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: password,
               decoration: const InputDecoration(labelText: "Password"),
@@ -84,7 +85,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ? const CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: handleLogin,
-                    child: const Text("Login"),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                      child: Text("Login"),
+                    ),
                   ),
 
             const SizedBox(height: 15),

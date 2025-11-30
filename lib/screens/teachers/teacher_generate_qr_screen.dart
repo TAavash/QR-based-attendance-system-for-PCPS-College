@@ -3,9 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../endpoints/session_api.dart';
 import '../../widgets/qr_generator.dart';
-import '../../endpoints/endpoints.dart'; // optional if you need constants
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 
 class TeacherGenerateQRScreen extends StatefulWidget {
   const TeacherGenerateQRScreen({super.key});
@@ -17,75 +15,62 @@ class TeacherGenerateQRScreen extends StatefulWidget {
 class _TeacherGenerateQRScreenState extends State<TeacherGenerateQRScreen> {
   List<Map<String, dynamic>> classes = [];
   int? selectedClassId;
-  DateTime selectedDate = DateTime.now();
   bool loading = false;
 
-  // session result
   String? qrToken;
   DateTime? expiresAt;
-  Timer? countdownTimer;
+  Timer? timer;
   Duration remaining = Duration.zero;
 
   @override
   void initState() {
     super.initState();
-    _loadClasses();
+    loadClasses();
   }
 
   @override
   void dispose() {
-    countdownTimer?.cancel();
+    timer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadClasses() async {
+  Future<void> loadClasses() async {
     setState(() => loading = true);
+
     try {
-      final list = await SessionAPI.fetchClasses();
+      final list = await SessionAPI.fetchTeacherClasses();
       setState(() {
         classes = list;
-        if (classes.isNotEmpty) selectedClassId = classes.first['id'] as int?;
+        if (classes.isNotEmpty) selectedClassId = classes.first["id"];
       });
     } catch (e) {
-      // If classes endpoint not available, leave empty and teacher can input id manually or add fallback.
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to load classes: $e")));
-    } finally {
-      setState(() => loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to fetch classes: $e")),
+      );
     }
+
+    setState(() => loading = false);
   }
 
-  Future<void> _pickDate() async {
-    final dt = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (dt != null) setState(() => selectedDate = dt);
-  }
-
-  void _startCountdown() {
-    countdownTimer?.cancel();
+  void startTimer() {
     if (expiresAt == null) return;
-    final now = DateTime.now().toUtc();
-    remaining = expiresAt!.toUtc().difference(now);
-    if (remaining.isNegative) remaining = Duration.zero;
 
-    countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final now = DateTime.now().toUtc();
+    timer?.cancel();
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final diff = expiresAt!.difference(DateTime.now());
+
       setState(() {
-        remaining = expiresAt!.toUtc().difference(now);
-        if (remaining.isNegative) remaining = Duration.zero;
+        remaining = diff.isNegative ? Duration.zero : diff;
       });
-      if (remaining.inSeconds <= 0) {
-        countdownTimer?.cancel();
-      }
+
+      if (remaining.inSeconds <= 0) timer?.cancel();
     });
   }
 
-  Future<void> _generateQR() async {
+  Future<void> generateQR() async {
     if (selectedClassId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a class")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Select a class first")));
       return;
     }
 
@@ -96,140 +81,96 @@ class _TeacherGenerateQRScreenState extends State<TeacherGenerateQRScreen> {
     });
 
     try {
-      final res = await SessionAPI.createSession(
-        classId: selectedClassId!,
-        date: selectedDate,
-      );
-
-      // parse result
-      final token = res['qr_token'] as String?;
-      final expires = res['expires_at'] as String?; // assume ISO string
-      DateTime? expDt;
-      if (expires != null) expDt = DateTime.parse(expires).toLocal();
+      final res = await SessionAPI.createSession(classRefId: selectedClassId!);
 
       setState(() {
-        qrToken = token;
-        expiresAt = expDt;
+        qrToken = res["qr_token"];
+        expiresAt = DateTime.parse(res["expires_at"]).toLocal();
       });
 
-      // start countdown
-      _startCountdown();
+      startTimer();
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Session created — show QR to students")));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("QR Generated")));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Create session failed: $e")));
-    } finally {
-      setState(() => loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to generate: $e")),
+      );
     }
+
+    setState(() => loading = false);
   }
 
-  Future<void> _copyToken() async {
-  if (qrToken == null) return;
-  await Clipboard.setData(ClipboardData(text: qrToken!));
-  ScaffoldMessenger.of(context).showSnackBar(
-    const SnackBar(content: Text("QR token copied to clipboard")),
-  );
-}
+  Future<void> copyToken() async {
+    if (qrToken == null) return;
+    await Clipboard.setData(ClipboardData(text: qrToken!));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text("Token Copied")));
+  }
 
-
-  String _formatDuration(Duration d) {
-    final mm = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final ss = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return "$mm:$ss";
+  String formatTime(Duration d) {
+    return "${d.inMinutes.remainder(60).toString().padLeft(2, '0')}:"
+        "${d.inSeconds.remainder(60).toString().padLeft(2, '0')}";
   }
 
   @override
   Widget build(BuildContext context) {
-    final dateLabel = DateFormat.yMMMMd().format(selectedDate);
-
     return Scaffold(
       appBar: AppBar(title: const Text("Generate Session QR")),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            // Class selector
             const Text("Select Class", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            if (loading && classes.isEmpty)
-              const Center(child: CircularProgressIndicator())
-            else if (classes.isEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text("No classes available. Ensure you have created classes in the admin or backend."),
-                  const SizedBox(height: 8),
-                  TextField(
-                    decoration: const InputDecoration(labelText: "Class ID (fallback)"),
-                    keyboardType: TextInputType.number,
-                    onChanged: (v) => selectedClassId = int.tryParse(v),
+
+            const SizedBox(height: 10),
+
+            loading
+                ? const Center(child: CircularProgressIndicator())
+                : DropdownButtonFormField<int>(
+                    value: selectedClassId,
+                    decoration: const InputDecoration(border: OutlineInputBorder()),
+                    items: classes.map((cls) {
+                      return DropdownMenuItem<int>(
+                        value: cls["id"],
+                        child: Text("${cls['program']} • ${cls['subject']} • S${cls['semester']} • Section ${cls['section']}"),
+
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => selectedClassId = val),
                   ),
-                ],
-              )
-            else
-              DropdownButtonFormField<int>(
-                value: selectedClassId,
-                items: classes.map((c) {
-                  return DropdownMenuItem<int>(
-                    value: c['id'] as int?,
-                    child: Text("${c['name']} (${c['section'] ?? ''})"),
-                  );
-                }).toList(),
-                onChanged: (v) => setState(() => selectedClassId = v),
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-              ),
 
-            const SizedBox(height: 16),
-
-            // Date
-            Row(
-              children: [
-                Expanded(child: Text("Date: $dateLabel")),
-                TextButton(onPressed: _pickDate, child: const Text("Change date")),
-              ],
-            ),
-
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
             ElevatedButton.icon(
-              onPressed: loading ? null : _generateQR,
               icon: const Icon(Icons.qr_code),
-              label: loading ? const Text("Generating...") : const Text("Generate QR (2 min)"),
+              label: const Text("Generate QR"),
+              onPressed: loading ? null : generateQR,
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
-            // QR display
-            if (qrToken != null && expiresAt != null) ...[
-              Center(child: QRGenerator(data: qrToken!, size: 280)),
-              const SizedBox(height: 12),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Expires in: ", style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(
-                    _formatDuration(remaining),
-                    style: TextStyle(
-                      color: remaining.inSeconds <= 10 ? Colors.red : Colors.black,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+            if (qrToken != null) ...[
+              Center(child: QRGenerator(data: qrToken!, size: 260)),
+              const SizedBox(height: 15),
+
+              Text(
+                "Expires in: ${formatTime(remaining)}",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 18,
+                  color: remaining.inSeconds < 10 ? Colors.red : Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
 
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ElevatedButton.icon(
-                    onPressed: remaining.inSeconds > 0 ? _copyToken : null,
-                    icon: const Icon(Icons.copy),
-                    label: const Text("Copy Token"),
-                  ),
-                ],
+              const SizedBox(height: 10),
+
+              ElevatedButton.icon(
+                onPressed: copyToken,
+                icon: const Icon(Icons.copy),
+                label: const Text("Copy Token"),
               ),
-            ] else if (qrToken != null && expiresAt == null) ...[
-              Text("QR generated but expiry time missing. Token: $qrToken"),
             ],
           ],
         ),

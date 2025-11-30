@@ -1,58 +1,139 @@
-// lib/endpoints/session_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'auth_api.dart';
 import 'endpoints.dart';
 
 class SessionAPI {
-  static const _storage = FlutterSecureStorage();
+  // Fetch classes assigned to the teacher (or all classes endpoint)
+  static Future<List<Map<String, dynamic>>> fetchTeacherClasses() async {
+  final token = await AuthAPI.getAccessToken();
 
-  /// Create a session (teacher only).
-  /// Expects backend response: { "qr_token": "...", "expires_at": "2025-11-25T12:00:00Z" }
+  final res = await http.get(
+    Uri.parse(Endpoints.teacherClasses),
+    headers: {
+      "Content-Type": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    },
+  );
+
+  if (res.statusCode == 200) {
+    final List data = jsonDecode(res.body);
+    return data.cast<Map<String, dynamic>>();
+  } else {
+    throw Exception("Failed to load teacher classes");
+  }
+}
+
+
+  // Create session / generate QR (teacher). Send class_ref (PK)
   static Future<Map<String, dynamic>> createSession({
-    required int classId,
-    required DateTime date,
+    required int classRefId,
   }) async {
-    final access = await _storage.read(key: "access");
-    final url = Uri.parse(Endpoints.createSession);
-
+    final token = await AuthAPI.getAccessToken();
     final res = await http.post(
-      url,
+      Uri.parse(Endpoints.createSession),
       headers: {
         "Content-Type": "application/json",
-        if (access != null) "Authorization": "Bearer $access",
+        if (token != null) "Authorization": "Bearer $token",
       },
-      body: jsonEncode({
-        "class_id": classId,
-        "date": date.toIso8601String().split('T').first, // send YYYY-MM-DD
-      }),
+      body: jsonEncode({"class_ref": classRefId}),
     );
 
     if (res.statusCode == 200 || res.statusCode == 201) {
       return jsonDecode(res.body) as Map<String, dynamic>;
     } else {
-      String msg = res.body;
-      try {
-        final body = jsonDecode(res.body);
-        msg = body['error'] ?? body['detail'] ?? res.body;
-      } catch (_) {}
-      throw Exception("Create session failed: ${res.statusCode} - $msg");
+      throw Exception("Create session failed: ${res.statusCode} ${res.body}");
     }
   }
 
-  /// Optional: fetch classes (simple endpoint). Adjust if you have a different endpoint.
-  static Future<List<Map<String, dynamic>>> fetchClasses() async {
-    final access = await _storage.read(key: "access");
-    final url = Uri.parse(Endpoints.classes);
-    final res = await http.get(url, headers: {
-      if (access != null) "Authorization": "Bearer $access",
-    });
+  // Mark attendance by token (student scan)
+  static Future<Map<String, dynamic>> markAttendance(String qrToken) async {
+    final token = await AuthAPI.getAccessToken();
+    final res = await http.post(
+      Uri.parse(Endpoints.markAttendance),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"qr_token": qrToken}),
+    );
+
+    final Map<String, dynamic> body = (res.body.isNotEmpty) ? jsonDecode(res.body) as Map<String, dynamic> : {};
+
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      return body;
+    } else {
+      // return body anyway so UI can show message
+      return body..putIfAbsent("error", () => "Failed (${res.statusCode})");
+    }
+  }
+
+  // Teacher's sessions
+  static Future<List<Map<String, dynamic>>> getTeacherSessions() async {
+    final token = await AuthAPI.getAccessToken();
+    final res = await http.get(
+      Uri.parse(Endpoints.teacherSessions),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+    );
 
     if (res.statusCode == 200) {
       final List data = jsonDecode(res.body);
       return data.cast<Map<String, dynamic>>();
     } else {
-      throw Exception("Failed to fetch classes");
+      throw Exception("Failed to fetch teacher sessions: ${res.statusCode}");
     }
   }
+
+  // Student attendance history
+  static Future<List<Map<String, dynamic>>> getStudentHistory() async {
+    final token = await AuthAPI.getAccessToken();
+    final res = await http.get(
+      Uri.parse(Endpoints.studentHistory),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+    );
+
+    if (res.statusCode == 200) {
+      final List data = jsonDecode(res.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception("Failed to fetch history: ${res.statusCode}");
+    }
+  }
+
+  // CREATE CLASS (teacher only)
+static Future<bool> createClass({
+  required String program,
+  required String semester,
+  required String subject,
+  required String section,
+}) async {
+  final token = await AuthAPI.getAccessToken();
+
+  final res = await http.post(
+    Uri.parse(Endpoints.createClass),
+    headers: {
+      "Content-Type": "application/json",
+      if (token != null) "Authorization": "Bearer $token",
+    },
+    body: jsonEncode({
+      "program": program,
+      "semester": semester,
+      "subject": subject,
+      "section": section,
+    }),
+  );
+
+  if (res.statusCode == 201 || res.statusCode == 200) {
+    return true;
+  } else {
+    throw Exception("Class creation failed: ${res.body}");
+  }
+}
+
 }
