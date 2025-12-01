@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_attendance/endpoints/session_api.dart';
+import '../../endpoints/session_api.dart';
 
 class UserAttendanceHistoryScreen extends StatefulWidget {
   const UserAttendanceHistoryScreen({super.key});
@@ -17,12 +17,10 @@ class _UserAttendanceHistoryScreenState
   @override
   void initState() {
     super.initState();
-    loadHistory();
+    load();
   }
 
-  Future<void> loadHistory() async {
-    setState(() => loading = true);
-
+  Future<void> load() async {
     try {
       final data = await SessionAPI.getStudentHistory();
       setState(() => history = data);
@@ -37,30 +35,75 @@ class _UserAttendanceHistoryScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Attendance History")),
+      backgroundColor: const Color(0xffF4F4F4),
+      appBar: AppBar(
+        title: const Text("Attendance History"),
+        backgroundColor: Colors.white,
+        elevation: 1,
+      ),
 
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : history.isEmpty
-              ? const Center(child: Text("No attendance records"))
+              ? const Center(
+                  child: Text("No attendance records",
+                      style:
+                          TextStyle(fontSize: 18, color: Colors.black54)),
+                )
               : ListView.separated(
                   padding: const EdgeInsets.all(16),
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemCount: history.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
                   itemBuilder: (_, i) {
                     final h = history[i];
-                    return Card(
-                      child: ListTile(
-                        leading: Icon(
-                          h["status"] == "present"
-                              ? Icons.check_circle
-                              : Icons.cancel,
-                          color: h["status"] == "present"
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-                        title: Text(h["class"]),
-                        subtitle: Text("Date: ${h["date"]}"),
+                    final isPresent = (h["status"] == "present");
+
+                    return Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 6,
+                            offset: const Offset(1, 3),
+                          )
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isPresent ? Icons.check_circle : Icons.cancel,
+                            size: 32,
+                            color: isPresent ? Colors.green : Colors.red,
+                          ),
+                          const SizedBox(width: 16),
+
+                          // INFO
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  h["class"],
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Date: ${h["date"]}",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },

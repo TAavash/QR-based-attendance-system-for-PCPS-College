@@ -15,13 +15,6 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
   bool scanned = false;
 
   @override
-  void reassemble() {
-    super.reassemble();
-    controller?.pauseCamera();
-    controller?.resumeCamera();
-  }
-
-  @override
   void dispose() {
     controller?.dispose();
     super.dispose();
@@ -31,40 +24,51 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
     controller = ctrl;
 
     ctrl.scannedDataStream.listen((scanData) async {
-      final code = scanData.code;
       if (scanned) return;
       scanned = true;
 
-      // Pause camera while we mark
+      final raw = scanData.code;
+      final code = raw?.trim();
       await controller?.pauseCamera();
+      print(code);
 
       if (code == null || code.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Empty QR code")));
-        await controller?.resumeCamera();
+        _showMessage("Invalid or empty QR code");
         scanned = false;
+        await controller?.resumeCamera();
         return;
       }
 
       try {
         final result = await SessionAPI.markAttendance(code);
-        // result may contain "message" or "error"
-        final msg = result["message"] ?? result["error"] ?? result.toString();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+        final msg = result["message"] ?? result["error"] ?? "Unknown response";
+
+        _showMessage(msg);
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to mark attendance: $e")));
-      } finally {
-        // small delay so user sees the message
-        await Future.delayed(const Duration(seconds: 1));
-        if (mounted) Navigator.pop(context);
+        _showMessage("Failed: $e");
       }
+
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.pop(context);
     });
+  }
+
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Scan QR Code"),
+        backgroundColor: Colors.black,
+        title: const Text("Scan QR"),
         centerTitle: true,
       ),
       body: Column(
@@ -75,24 +79,23 @@ class _ScanQRScreenState extends State<ScanQRScreen> {
               key: qrKey,
               onQRViewCreated: _onQRViewCreated,
               overlay: QrScannerOverlayShape(
-                borderColor: Colors.blue,
-                borderRadius: 10,
-                borderLength: 30,
+                borderColor: const Color(0xFF6750A4),
+                borderRadius: 12,
+                borderLength: 45,
                 borderWidth: 8,
-                cutOutSize: MediaQuery.of(context).size.width * 0.75,
+                cutOutSize: MediaQuery.of(context).size.width * 0.78,
               ),
             ),
           ),
-
           Expanded(
             flex: 1,
             child: Container(
               width: double.infinity,
-              color: Colors.black12,
+              color: Colors.black87,
               alignment: Alignment.center,
               child: const Text(
-                "Point camera at QR code",
-                style: TextStyle(fontSize: 18),
+                "Align the QR inside the frame",
+                style: TextStyle(fontSize: 18, color: Colors.white70),
               ),
             ),
           )

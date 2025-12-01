@@ -19,36 +19,44 @@ class _TeacherSessionsScreenState extends State<TeacherSessionsScreen> {
   }
 
   Future<void> loadSessions() async {
-    setState(() => loading = true);
-
     try {
       final data = await SessionAPI.getTeacherSessions();
       setState(() => sessions = data);
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Failed to load: $e")));
+    } finally {
+      setState(() => loading = false);
     }
-
-    setState(() => loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Your Sessions")),
+      appBar: AppBar(title: const Text("Session Records")),
 
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : sessions.isEmpty
-              ? const Center(child: Text("No sessions found"))
-              : ListView.separated(
+              ? const Center(child: Text("No session records found"))
+              : ListView.builder(
                   padding: const EdgeInsets.all(16),
+                  itemCount: sessions.length,
                   itemBuilder: (_, i) {
                     final s = sessions[i];
+
                     return Card(
+                      elevation: 3,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                       child: ListTile(
+                        leading: const CircleAvatar(
+                          backgroundColor: Colors.deepPurple,
+                          child: Icon(Icons.qr_code, color: Colors.white),
+                        ),
                         title: Text(s["class"]),
-                        subtitle: Text("Date: ${s["date"]}"),
+                        subtitle: Text(
+                          "Date: ${s['date']}",
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
                         trailing: Chip(
                           label: Text("${s["attendance_count"]} present"),
                           backgroundColor: Colors.green.shade100,
@@ -56,8 +64,6 @@ class _TeacherSessionsScreenState extends State<TeacherSessionsScreen> {
                       ),
                     );
                   },
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemCount: sessions.length,
                 ),
     );
   }

@@ -12,12 +12,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final username = TextEditingController();
+  final uid = TextEditingController();
   final password = TextEditingController();
   bool loading = false;
 
   Future<void> handleLogin() async {
-    if (username.text.isEmpty || password.text.isEmpty) {
+    if (uid.text.isEmpty || password.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields")),
       );
@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => loading = true);
 
     bool success = await AuthAPI.login(
-      username: username.text.trim(),
+      uid: uid.text.trim(),
       password: password.text.trim(),
     );
 
@@ -70,8 +70,8 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: username,
-              decoration: const InputDecoration(labelText: "Username"),
+              controller: uid,
+              decoration: const InputDecoration(labelText: "UID"),
             ),
             const SizedBox(height: 12),
             TextField(

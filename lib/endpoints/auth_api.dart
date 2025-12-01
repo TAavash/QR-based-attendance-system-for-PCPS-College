@@ -33,13 +33,13 @@ class AuthAPI {
 
   /// Login and persist tokens + role
   static Future<bool> login({
-    required String username,
+    required String uid,
     required String password,
   }) async {
     final res = await http.post(
       Uri.parse(Endpoints.login),
       headers: _plainHeaders(),
-      body: jsonEncode({"username": username, "password": password}),
+      body: jsonEncode({"uid": uid, "password": password}),
     );
 
     if (res.statusCode == 200) {

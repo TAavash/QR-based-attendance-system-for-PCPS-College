@@ -1,59 +1,197 @@
 import 'package:flutter/material.dart';
 import '../../widgets/logout_button.dart';
 import 'scan_qr_screen.dart';
-// import 'user_history_screen.dart';
+import 'user_attendance_history_screen.dart';
 
 class UserHomeScreen extends StatelessWidget {
   const UserHomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text("Student Home"),
-        centerTitle: true,
-        actions: const [LogoutButton()],
+        elevation: 0,
+        backgroundColor: theme.colorScheme.surface,
+        title: const Text("Student Dashboard"),
+        actions: const [
+          LogoutButton(),
+          SizedBox(width: 10),
+        ],
       ),
-      body: Padding(
+
+      body: ListView(
         padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Welcome Student 👋",
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
+        children: [
 
-            // Scan QR Button
-            ElevatedButton.icon(
-              onPressed: () async {
-                // scan screen will auto-call backend and show result
-                await Navigator.push(context, MaterialPageRoute(builder: (_) => const ScanQRScreen()));
-              },
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text("Scan Attendance QR"),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                textStyle: const TextStyle(fontSize: 18),
+          // ---------------------------
+          // Greeting
+          // ---------------------------
+          Text(
+            "Hi, Student 👋",
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            "Welcome back!",
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: Colors.grey,
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          // ---------------------------
+          // Feature Card (Scan QR)
+          // ---------------------------
+          _bigActionCard(
+            context,
+            title: "Scan Attendance QR",
+            subtitle: "Mark your attendance instantly",
+            icon: Icons.qr_code_scanner,
+            color: Colors.blue,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ScanQRScreen()),
+              );
+            },
+          ),
+
+          const SizedBox(height: 20),
+
+          // ---------------------------
+          // Grid Menu
+          // ---------------------------
+          Text(
+            "Quick Actions",
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            childAspectRatio: 1.3,
+            children: [
+              _gridButton(
+                icon: Icons.history,
+                label: "Attendance History",
+                color: Colors.orange,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const UserAttendanceHistoryScreen()),
+                  );
+                },
               ),
-            ),
+              _gridButton(
+                icon: Icons.info,
+                label: "My Classes (Coming Soon)",
+                color: Colors.green,
+                onTap: () {},
+              ),
+            ],
+          ),
 
-            const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
 
-            // View attendance history
-            OutlinedButton.icon(
-              onPressed: () {
-                // Navigator.push(context, MaterialPageRoute(builder: (_) => const UserHistoryScreen()));
-              },
-              icon: const Icon(Icons.history),
-              label: const Text("View Attendance History"),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                textStyle: const TextStyle(fontSize: 18),
+  // ----------------------------------------------
+  // WIDGETS
+  // ----------------------------------------------
+
+  Widget _bigActionCard(
+      BuildContext context, {
+        required String title,
+        required String subtitle,
+        required IconData icon,
+        required Color color,
+        required VoidCallback onTap,
+      }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [color.withOpacity(0.85), color.withOpacity(0.65)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 55, color: Colors.white),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _gridButton({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        elevation: 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: color.withOpacity(0.15),
+                child: Icon(icon, size: 28, color: color),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+              )
+            ],
+          ),
         ),
       ),
     );

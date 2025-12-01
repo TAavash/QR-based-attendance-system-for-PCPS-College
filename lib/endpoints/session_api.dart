@@ -25,18 +25,18 @@ class SessionAPI {
 }
 
 
-  // Create session / generate QR (teacher). Send class_ref (PK)
-  static Future<Map<String, dynamic>> createSession({
-    required int classRefId,
+  // Create session / generate QR (teacher). Send class_id (PK)
+  static Future<Map<String, dynamic>> generateQR({
+    required int classId,
   }) async {
     final token = await AuthAPI.getAccessToken();
     final res = await http.post(
-      Uri.parse(Endpoints.createSession),
+      Uri.parse(Endpoints.generateQR),
       headers: {
         "Content-Type": "application/json",
         if (token != null) "Authorization": "Bearer $token",
       },
-      body: jsonEncode({"class_ref": classRefId}),
+      body: jsonEncode({"class_id": classId.toString()}),
     );
 
     if (res.statusCode == 200 || res.statusCode == 201) {
@@ -55,7 +55,7 @@ class SessionAPI {
         "Content-Type": "application/json",
         if (token != null) "Authorization": "Bearer $token",
       },
-      body: jsonEncode({"qr_token": qrToken}),
+      body: jsonEncode({"qr_uuid": qrToken}),
     );
 
     final Map<String, dynamic> body = (res.body.isNotEmpty) ? jsonDecode(res.body) as Map<String, dynamic> : {};
@@ -106,34 +106,5 @@ class SessionAPI {
     }
   }
 
-  // CREATE CLASS (teacher only)
-static Future<bool> createClass({
-  required String program,
-  required String semester,
-  required String subject,
-  required String section,
-}) async {
-  final token = await AuthAPI.getAccessToken();
-
-  final res = await http.post(
-    Uri.parse(Endpoints.createClass),
-    headers: {
-      "Content-Type": "application/json",
-      if (token != null) "Authorization": "Bearer $token",
-    },
-    body: jsonEncode({
-      "program": program,
-      "semester": semester,
-      "subject": subject,
-      "section": section,
-    }),
-  );
-
-  if (res.statusCode == 201 || res.statusCode == 200) {
-    return true;
-  } else {
-    throw Exception("Class creation failed: ${res.body}");
-  }
-}
 
 }
