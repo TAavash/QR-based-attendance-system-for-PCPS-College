@@ -21,11 +21,9 @@ class UserHomeScreen extends StatelessWidget {
           SizedBox(width: 10),
         ],
       ),
-
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-
           // ---------------------------
           // Greeting
           // ---------------------------
@@ -65,7 +63,7 @@ class UserHomeScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ---------------------------
-          // Grid Menu
+          // Grid Menu (Responsive)
           // ---------------------------
           Text(
             "Quick Actions",
@@ -76,32 +74,47 @@ class UserHomeScreen extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.3,
-            children: [
-              _gridButton(
-                icon: Icons.history,
-                label: "Attendance History",
-                color: Colors.orange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const UserAttendanceHistoryScreen()),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final itemWidth = constraints.maxWidth / 2;
+              final itemHeight = itemWidth * 0.95; // more vertical space
+              final aspectRatio = itemWidth / itemHeight;
+
+              return GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: aspectRatio,
+                ),
+                itemCount: 2,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return _gridButton(
+                      icon: Icons.history,
+                      label: "Attendance History",
+                      color: Colors.orange,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const UserAttendanceHistoryScreen()),
+                        );
+                      },
+                    );
+                  }
+
+                  return _gridButton(
+                    icon: Icons.info,
+                    label: "My Classes",
+                    color: Colors.green,
+                    onTap: () {},
                   );
                 },
-              ),
-              _gridButton(
-                icon: Icons.info,
-                label: "My Classes (Coming Soon)",
-                color: Colors.green,
-                onTap: () {},
-              ),
-            ],
-          ),
-
+              );
+            },
+          )
         ],
       ),
     );
@@ -112,13 +125,13 @@ class UserHomeScreen extends StatelessWidget {
   // ----------------------------------------------
 
   Widget _bigActionCard(
-      BuildContext context, {
-        required String title,
-        required String subtitle,
-        required IconData icon,
-        required Color color,
-        required VoidCallback onTap,
-      }) {
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -172,10 +185,10 @@ class UserHomeScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        elevation: 1,
+        elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          padding: const EdgeInsets.all(18),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -184,12 +197,21 @@ class UserHomeScreen extends StatelessWidget {
                 backgroundColor: color.withOpacity(0.15),
                 child: Icon(icon, size: 28, color: color),
               ),
-              const SizedBox(height: 12),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-              )
+              const SizedBox(height: 10),
+
+              // Prevent text overflow
+              Flexible(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
             ],
           ),
         ),

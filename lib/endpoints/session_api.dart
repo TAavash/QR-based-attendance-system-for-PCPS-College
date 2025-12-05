@@ -68,24 +68,24 @@ class SessionAPI {
     }
   }
 
-  // Teacher's sessions
-  static Future<List<Map<String, dynamic>>> getTeacherSessions() async {
-    final token = await AuthAPI.getAccessToken();
-    final res = await http.get(
-      Uri.parse(Endpoints.teacherSessions),
-      headers: {
-        "Content-Type": "application/json",
-        if (token != null) "Authorization": "Bearer $token",
-      },
-    );
+  // // Teacher's sessions
+  // static Future<List<Map<String, dynamic>>> getTeacherSessions() async {
+  //   final token = await AuthAPI.getAccessToken();
+  //   final res = await http.get(
+  //     Uri.parse(Endpoints.teacherSessions),
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       if (token != null) "Authorization": "Bearer $token",
+  //     },
+  //   );
 
-    if (res.statusCode == 200) {
-      final List data = jsonDecode(res.body);
-      return data.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception("Failed to fetch teacher sessions: ${res.statusCode}");
-    }
-  }
+  //   if (res.statusCode == 200) {
+  //     final List data = jsonDecode(res.body);
+  //     return data.cast<Map<String, dynamic>>();
+  //   } else {
+  //     throw Exception("Failed to fetch teacher sessions: ${res.statusCode}");
+  //   }
+  // }
 
   // Student attendance history
   static Future<List<Map<String, dynamic>>> getStudentHistory() async {

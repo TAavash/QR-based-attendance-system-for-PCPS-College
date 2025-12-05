@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../endpoints/auth_api.dart';
 import '../teachers/teacher_home_screen.dart';
 import '../users/user_home_screen.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,12 +14,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final uid = TextEditingController();
   final password = TextEditingController();
   bool loading = false;
+  bool passwordVisible = false;
 
   Future<void> handleLogin() async {
     if (uid.text.isEmpty || password.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields")),
-      );
+      _showMessage("Please fill all fields");
       return;
     }
 
@@ -34,16 +32,13 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => loading = false);
 
     if (!success) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Invalid credentials")));
+      _showMessage("Invalid credentials");
       return;
     }
 
-    // Fetch role (saved during login)
     String? role = await AuthAPI.getRole();
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text("Login successful")));
+    _showMessage("Login successful");
 
     if (!mounted) return;
 
@@ -60,49 +55,147 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: uid,
-              decoration: const InputDecoration(labelText: "UID"),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: password,
-              decoration: const InputDecoration(labelText: "Password"),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
+    final size = MediaQuery.of(context).size;
+    final isLarge = size.width > 500;
 
-            loading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: handleLogin,
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                      child: Text("Login"),
+    return Scaffold(
+      backgroundColor: Colors.deepPurple.shade50,
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            constraints: BoxConstraints(maxWidth: isLarge ? 420 : size.width),
+            child: Column(
+              children: [
+                // --- APP LOGO / TITLE ---
+                Icon(Icons.qr_code_rounded,
+                    size: 80, color: Colors.deepPurple.shade400),
+                const SizedBox(height: 12),
+                Text(
+                  "QR Attendance",
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.deepPurple.shade700,
+                  ),
+                ),
+                const SizedBox(height: 40),
+
+                // ---- LOGIN CARD ----
+                Card(
+                  elevation: 5,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // UID FIELD
+                        TextField(
+                          controller: uid,
+                          decoration: InputDecoration(
+                            labelText: "UID",
+                            prefixIcon: const Icon(Icons.person),
+                            filled: true,
+                            fillColor: Colors.deepPurple.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+
+                        // PASSWORD FIELD
+                        TextField(
+                          controller: password,
+                          obscureText: !passwordVisible,
+                          decoration: InputDecoration(
+                            labelText: "Password",
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                passwordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                              ),
+                              onPressed: () => setState(() {
+                                passwordVisible = !passwordVisible;
+                              }),
+                            ),
+                            filled: true,
+                            fillColor: Colors.deepPurple.shade50,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 25),
+
+                        // LOGIN BUTTON
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 3,
+                          ),
+                          onPressed: loading ? null : handleLogin,
+                          child: loading
+                              ? const SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2.4,
+                                  ),
+                                )
+                              : const Text(
+                                  "Login",
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.white),
+                                ),
+                        ),
+                      ],
                     ),
                   ),
+                ),
 
-            const SizedBox(height: 15),
+                const SizedBox(height: 30),
 
-            TextButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                );
-              },
-              child: const Text("Don’t have an account? Register"),
+                // VERSION / FOOTER
+                Text(
+                  "Powered by PCPS College",
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "v1.0.0",
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
