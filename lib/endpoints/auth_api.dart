@@ -1,3 +1,4 @@
+// lib/endpoints/auth_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -11,7 +12,7 @@ class AuthAPI {
     return {"Content-Type": "application/json"};
   }
 
-  /// Login and persist tokens + role
+  /// Login and persist tokens + role (UNCHANGED, same as your old code)
   static Future<bool> login({
     required String uid,
     required String password,
@@ -33,11 +34,13 @@ class AuthAPI {
         await storage.write(key: "refresh", value: data["refresh"]);
       }
 
-      // Role: support both shapes: {"role": "..."} OR {"user": {"role": "..."}}
+      // Role handling (same as your old logic)
       String? role;
       if (data.containsKey("role") && data["role"] is String) {
         role = data["role"] as String;
-      } else if (data.containsKey("user") && data["user"] is Map && data["user"]["role"] is String) {
+      } else if (data.containsKey("user") &&
+          data["user"] is Map &&
+          data["user"]["role"] is String) {
         role = data["user"]["role"] as String;
       }
 
@@ -51,6 +54,7 @@ class AuthAPI {
     return false;
   }
 
+  // Read stored values (UNCHANGED)
   static Future<String?> getAccessToken() async {
     return await storage.read(key: "access");
   }
@@ -61,5 +65,69 @@ class AuthAPI {
 
   static Future<void> logout() async {
     await storage.deleteAll();
+  }
+
+
+  /// Get logged-in user's profile
+  static Future<Map<String, dynamic>> getProfile() async {
+    final token = await getAccessToken();
+
+    final res = await http.get(
+      Uri.parse("${Endpoints.baseURL}account/profile/"),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+    );
+
+    if (res.statusCode == 200) {
+      return jsonDecode(res.body) as Map<String, dynamic>;
+    }
+
+    throw Exception("Failed to load profile: ${res.statusCode} ${res.body}");
+  }
+
+  /// Update profile info (username, email)
+  static Future<bool> updateProfile({
+    String? username,
+    String? email,
+  }) async {
+    final token = await getAccessToken();
+
+    final res = await http.patch(
+      Uri.parse("${Endpoints.baseURL}account/profile/update/"),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "username": username,
+        "email": email,
+      }),
+    );
+
+    return res.statusCode == 200;
+  }
+
+  /// Change password
+  static Future<bool> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
+    final token = await getAccessToken();
+
+    final res = await http.patch(
+      Uri.parse("${Endpoints.baseURL}account/password/change/"),
+      headers: {
+        "Content-Type": "application/json",
+        if (token != null) "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "old_password": oldPassword,
+        "new_password": newPassword,
+      }),
+    );
+
+    return res.statusCode == 200;
   }
 }
