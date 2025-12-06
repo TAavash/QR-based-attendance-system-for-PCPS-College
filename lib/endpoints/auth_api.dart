@@ -11,26 +11,6 @@ class AuthAPI {
     return {"Content-Type": "application/json"};
   }
 
-  // static Future<bool> register({
-  //   required String username,
-  //   required String email,
-  //   required String password,
-  //   required String role,
-  // }) async {
-  //   final res = await http.post(
-  //     Uri.parse(Endpoints.register),
-  //     headers: _plainHeaders(),
-  //     body: jsonEncode({
-  //       "username": username,
-  //       "email": email,
-  //       "password": password,
-  //       "role": role,
-  //     }),
-  //   );
-
-  //   return res.statusCode == 201;
-  // }
-
   /// Login and persist tokens + role
   static Future<bool> login({
     required String uid,

@@ -1,4 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Camera for QR scanning already used -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Location (for geofencing) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:label="qr_attendance"
         android:name="${applicationName}"
