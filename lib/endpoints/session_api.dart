@@ -16,7 +16,8 @@ class SessionAPI {
       final List data = jsonDecode(res.body);
       return data.cast<Map<String, dynamic>>();
     } else {
-      throw Exception("Failed to load teacher classes: ${res.statusCode} ${res.body}");
+      throw Exception(
+          "Failed to load teacher classes: ${res.statusCode} ${res.body}");
     }
   }
 
@@ -42,47 +43,54 @@ class SessionAPI {
   // mark attendance (student). Pass qr_uuid and device lat/lng for geofence check
   static Future<Map<String, dynamic>> markAttendance({
     required String qrUuid,
-    required double lat,
-    required double lng,
+    double? lat,
+    double? lng,
   }) async {
     final token = await AuthAPI.getAccessToken();
+
+    final body = {
+      "qr_uuid": qrUuid,
+    };
+
+    if (lat != null && lng != null) {
+      body["lat"] = lat.toString();
+      body["lng"] = lng.toString();
+    }
+
     final res = await http.post(
       Uri.parse(Endpoints.markAttendance),
       headers: {
         "Content-Type": "application/json",
         if (token != null) "Authorization": "Bearer $token",
       },
-      body: jsonEncode({
-        "qr_uuid": qrUuid,
-        "lat": lat.toString(),
-        "lng": lng.toString(),
-      }),
+      body: jsonEncode(body),
     );
 
-    final Map<String, dynamic> body = (res.body.isNotEmpty) ? jsonDecode(res.body) as Map<String, dynamic> : {};
+    final Map<String, dynamic> data =
+        res.body.isNotEmpty ? jsonDecode(res.body) : {};
 
     if (res.statusCode == 200 || res.statusCode == 201) {
-      return body;
+      return data;
     } else {
-      return body..putIfAbsent("error", () => "Failed (${res.statusCode})");
+      return data..putIfAbsent("error", () => "Failed (${res.statusCode})");
     }
   }
 
-  // teacher session list
-  static Future<List<Map<String, dynamic>>> getTeacherSessions() async {
-    final token = await AuthAPI.getAccessToken();
-    final res = await http.get(Uri.parse(Endpoints.teacherSessions), headers: {
-      "Content-Type": "application/json",
-      if (token != null) "Authorization": "Bearer $token",
-    });
+  // // teacher session list
+  // static Future<List<Map<String, dynamic>>> getTeacherSessions() async {
+  //   final token = await AuthAPI.getAccessToken();
+  //   final res = await http.get(Uri.parse(Endpoints.teacherSessions), headers: {
+  //     "Content-Type": "application/json",
+  //     if (token != null) "Authorization": "Bearer $token",
+  //   });
 
-    if (res.statusCode == 200) {
-      final List data = jsonDecode(res.body);
-      return data.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception("Failed to fetch teacher sessions: ${res.statusCode}");
-    }
-  }
+  //   if (res.statusCode == 200) {
+  //     final List data = jsonDecode(res.body);
+  //     return data.cast<Map<String, dynamic>>();
+  //   } else {
+  //     throw Exception("Failed to fetch teacher sessions: ${res.statusCode}");
+  //   }
+  // }
 
   // student attendance history
   static Future<List<Map<String, dynamic>>> getStudentHistory() async {
