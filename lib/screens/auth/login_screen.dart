@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_attendance/screens/admin/admin_dashboard_screen.dart';
 import '../../endpoints/auth_api.dart';
 import '../teachers/teacher_home_screen.dart';
 import '../users/user_home_screen.dart';
@@ -42,7 +43,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (!mounted) return;
 
-    if (role == "teacher") {
+    if (role == "admin") {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+      );
+    } else if (role == "teacher") {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const TeacherHomeScreen()),
@@ -56,8 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _showMessage(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
@@ -147,8 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.deepPurple,
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),

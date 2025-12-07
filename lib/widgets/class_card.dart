@@ -13,9 +13,10 @@ class ClassCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final String classCode = classData["class_code"] ?? classData["class_code".toString()] ?? (classData["class_code"] ?? "");
+
+    final String classCode = classData["class_code"] ?? "";
     final String subject = classData["subject"] ?? classData["program"] ?? "Unknown Subject";
-    final String year = classData["year"] ?? classData["semester"]?.toString() ?? "—";
+    final String year = classData["year"]?.toString() ?? classData["semester"]?.toString() ?? "—";
     final String section = classData["section"] ?? "—";
 
     return Material(
@@ -29,7 +30,10 @@ class ClassCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
-              colors: [Colors.deepPurple.shade400, Colors.deepPurple.shade200],
+              colors: [
+                Colors.deepPurple.shade400,
+                Colors.deepPurple.shade200,
+              ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -37,7 +41,7 @@ class ClassCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // header row
+              // ---- HEADER
               Row(
                 children: [
                   Container(
@@ -46,39 +50,60 @@ class ClassCard extends StatelessWidget {
                       color: Colors.white24,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.menu_book_rounded, color: Colors.white, size: 22),
+                    child: const Icon(Icons.menu_book_rounded,
+                        color: Colors.white, size: 22),
                   ),
                   const Spacer(),
                   Chip(
-                    label: Text(section, style: const TextStyle(color: Colors.white)),
+                    label: Text(section,
+                        style: const TextStyle(color: Colors.white)),
                     backgroundColor: Colors.white24,
                   ),
                 ],
               ),
               const SizedBox(height: 12),
 
-              // subject
-              Text(subject,
-                  style: theme.textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis),
-
+              // ---- SUBJECT
+              Text(
+                subject,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 8),
 
-              // class code & year
-              Text(classCode, style: theme.textTheme.bodyLarge?.copyWith(color: Colors.white70)),
+              // ---- CLASS CODE
+              Text(
+                classCode,
+                style:
+                    theme.textTheme.bodyLarge?.copyWith(color: Colors.white70),
+              ),
               const SizedBox(height: 6),
-              Text("Level: $year", style: theme.textTheme.bodySmall?.copyWith(color: Colors.white70)),
+
+              // ---- YEAR OR SEMESTER
+              Text(
+                "Level: $year",
+                style:
+                    theme.textTheme.bodySmall?.copyWith(color: Colors.white70),
+              ),
 
               const Spacer(),
 
-              // footer
+              // ---- FOOTER
               const Row(
                 children: [
                   Expanded(
-                    child: Text("Open", style: TextStyle(color: Colors.white), textAlign: TextAlign.left),
+                    child: Text(
+                      "Open",
+                      style: TextStyle(color: Colors.white),
+                      textAlign: TextAlign.left,
+                    ),
                   ),
-                  Icon(Icons.arrow_forward_ios, color: Colors.white70, size: 16),
+                  Icon(Icons.arrow_forward_ios,
+                      color: Colors.white70, size: 16),
                 ],
               ),
             ],
