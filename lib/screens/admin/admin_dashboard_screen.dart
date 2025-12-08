@@ -9,29 +9,43 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const primary = Color(0xFF6A4CFF);
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F7FC),
+
       appBar: AppBar(
-        title: const Text("Admin Dashboard"),
+        elevation: 0,
+        backgroundColor: Colors.white,
         centerTitle: true,
+        title: const Text(
+          "Admin Dashboard",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF333333),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
             onPressed: () async {
               await AuthAPI.logout();
               if (context.mounted) {
-                Navigator.pushNamedAndRemoveUntil(
-                    context, "/", (route) => false);
+                Navigator.pushNamedAndRemoveUntil(context, "/", (_) => false);
               }
             },
-          ),
+          )
         ],
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: GridView.count(
-          crossAxisCount: MediaQuery.of(context).size.width > 550 ? 3 : 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+          crossAxisSpacing: 18,
+          mainAxisSpacing: 18,
+          crossAxisCount:
+              MediaQuery.of(context).size.width > 550 ? 3 : 2,
+
           children: [
             _adminCard(
               context,
@@ -60,55 +74,57 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _adminCard(BuildContext context,
-      {required IconData icon,
-      required String title,
-      required String subtitle,
-      required Widget screen}) {
-    return Material(
-      elevation: 4,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => screen),
-          );
-        },
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            gradient: LinearGradient(
-              colors: [
-                Colors.deepPurple.shade400,
-                Colors.deepPurple.shade200,
-              ],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 40, color: Colors.white),
-              const Spacer(),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                subtitle,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: Colors.white70,
-                ),
-              ),
+  Widget _adminCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Widget screen,
+  }) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+      },
+
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF6A4CFF),
+              const Color(0xFF8D6CFF),
             ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.deepPurple.withOpacity(0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+
+        padding: const EdgeInsets.all(20),
+
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 45, color: Colors.white),
+            const Spacer(),
+            Text(
+              title,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 19,
+                  fontWeight: FontWeight.bold),
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+            ),
+          ],
         ),
       ),
     );

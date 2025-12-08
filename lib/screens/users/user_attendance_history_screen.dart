@@ -12,6 +12,7 @@ class UserAttendanceHistoryScreen extends StatefulWidget {
 class _UserAttendanceHistoryScreenState
     extends State<UserAttendanceHistoryScreen> {
   bool loading = true;
+  String? errorMsg;
   List<Map<String, dynamic>> history = [];
 
   @override
@@ -25,8 +26,9 @@ class _UserAttendanceHistoryScreenState
       final data = await SessionAPI.getStudentHistory();
       setState(() => history = data);
     } catch (e) {
+      setState(() => errorMsg = e.toString());
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Failed: $e")));
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
 
     setState(() => loading = false);
@@ -41,73 +43,96 @@ class _UserAttendanceHistoryScreenState
         backgroundColor: Colors.white,
         elevation: 1,
       ),
-
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : history.isEmpty
-              ? const Center(
-                  child: Text("No attendance records",
-                      style:
-                          TextStyle(fontSize: 18, color: Colors.black54)),
+
+          // ERROR UI
+          : errorMsg != null
+              ? Center(
+                  child: Text(
+                    errorMsg!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.red,
+                    ),
+                  ),
                 )
-              : ListView.separated(
-                  padding: const EdgeInsets.all(16),
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemCount: history.length,
-                  itemBuilder: (_, i) {
-                    final h = history[i];
-                    final isPresent = (h["status"] == "present");
 
-                    return Container(
+              // EMPTY UI
+              : history.isEmpty
+                  ? const Center(
+                      child: Text(
+                        "No attendance records found.",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    )
+
+                  // SUCCESS UI
+                  : ListView.separated(
                       padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 6,
-                            offset: const Offset(1, 3),
-                          )
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isPresent ? Icons.check_circle : Icons.cancel,
-                            size: 32,
-                            color: isPresent ? Colors.green : Colors.red,
-                          ),
-                          const SizedBox(width: 16),
+                      itemCount: history.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, i) {
+                        final h = history[i];
 
-                          // INFO
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  h["class"],
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  "Date: ${h["date"]}",
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey.shade700,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        final className = h["class"] ?? "Unknown Class";
+                        final date = h["date"] ?? "Unknown Date";
+                        final status = (h["status"] ?? "").toString();
+
+                        final isPresent = status.toLowerCase() == "present";
+
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black12,
+                                blurRadius: 6,
+                                offset: Offset(1, 3),
+                              )
+                            ],
                           ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isPresent ? Icons.check_circle : Icons.cancel,
+                                size: 34,
+                                color: isPresent ? Colors.green : Colors.red,
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      className,
+                                      style: const TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Date: $date",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
     );
   }
 }

@@ -95,16 +95,41 @@ class SessionAPI {
   // student attendance history
   static Future<List<Map<String, dynamic>>> getStudentHistory() async {
     final token = await AuthAPI.getAccessToken();
-    final res = await http.get(Uri.parse(Endpoints.studentHistory), headers: {
-      "Content-Type": "application/json",
-      if (token != null) "Authorization": "Bearer $token",
-    });
 
-    if (res.statusCode == 200) {
-      final List data = jsonDecode(res.body);
-      return data.cast<Map<String, dynamic>>();
-    } else {
-      throw Exception("Failed to fetch history: ${res.statusCode}");
+    try {
+      final res = await http.get(
+        Uri.parse(Endpoints.studentHistory),
+        headers: {
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+      );
+
+      // Backend returns success
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+
+        if (decoded is List) {
+          return decoded.cast<Map<String, dynamic>>();
+        } else {
+          throw Exception("Invalid response format");
+        }
+      }
+
+      // Unauthorized
+      if (res.statusCode == 401) {
+        throw Exception("Session expired. Please login again.");
+      }
+
+      // Backend error message fallback (json or raw)
+      try {
+        final err = jsonDecode(res.body);
+        throw Exception(err["error"] ?? "Server error");
+      } catch (_) {
+        throw Exception("Failed (${res.statusCode})");
+      }
+    } catch (e) {
+      throw Exception("Network or server error: $e");
     }
   }
 }
